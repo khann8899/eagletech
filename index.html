@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EagleTech — The Impossible American Company</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:      #050e1f;
+  --navy-mid:  #091829;
+  --navy-card: #0b1e35;
+  --blue:      #0f3460;
+  --accent:    #c8a84b;
+  --accent2:   #e8c97a;
+  --win:       #2ecc71;
+  --win-dim:   rgba(46,204,113,0.12);
+  --lose:      #e74c3c;
+  --lose-dim:  rgba(231,76,60,0.12);
+  --warn:      #f39c12;
+  --muted:     #5a7fa8;
+  --border:    rgba(200,168,75,0.15);
+  --white:     #eef2f8;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+
+body {
+  font-family:'Syne',sans-serif;
+  background:var(--navy);
+  color:var(--white);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── GRID TEXTURE ── */
+body::before {
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(200,168,75,0.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(200,168,75,0.04) 1px,transparent 1px);
+  background-size:48px 48px;
+  pointer-events:none;z-index:0;
+}
+
+/* ── TOP HUD ── */
+#hud {
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 28px;
+  background:rgba(5,14,31,0.92);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  transition:transform 0.4s;
+}
+#hud.off{transform:translateY(-100%)}
+.hud-logo{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:20px;letter-spacing:4px;
+}
+.hud-logo em{color:var(--accent);font-style:normal}
+.hud-meters{display:flex;gap:28px;align-items:center}
+.meter-group{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.meter-lbl{
+  font-family:'DM Mono',monospace;font-size:9px;
+  letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);
+}
+.meter-row{display:flex;align-items:center;gap:8px}
+.meter-val{
+  font-family:'Bebas Neue',sans-serif;font-size:24px;line-height:1;
+}
+.meter-val.score-num{color:var(--lose)}
+.meter-val.cost-num{color:var(--accent)}
+.meter-bar{width:90px;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden}
+.meter-fill{height:100%;border-radius:2px;transition:width 0.5s cubic-bezier(.4,0,.2,1)}
+.fill-lose{background:linear-gradient(90deg,#c0392b,var(--lose))}
+.fill-cost{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+
+/* ── SCREENS ── */
+.screen{
+  min-height:100vh;display:none;
+  flex-direction:column;align-items:center;justify-content:center;
+  padding:90px 24px 60px;
+  position:relative;z-index:1;
+}
+.screen.active{display:flex;animation:fadeUp .5s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── INTRO ── */
+#intro{text-align:center;gap:0}
+.flag-stripe{
+  display:inline-flex;gap:4px;margin-bottom:28px;
+  animation:fadeUp .6s ease .1s both;
+}
+.flag-stripe span{
+  display:block;width:22px;height:5px;border-radius:1px;
+}
+.fs-r{background:#b22234}
+.fs-w{background:var(--white)}
+.fs-b{background:#3c3b6e}
+
+.eyebrow{
+  font-family:'DM Mono',monospace;font-size:10px;
+  letter-spacing:4px;text-transform:uppercase;
+  color:var(--accent);margin-bottom:24px;
+  animation:fadeUp .6s ease .2s both;
+}
+.mega-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(56px,9vw,120px);
+  line-height:.88;letter-spacing:2px;
+  margin-bottom:36px;
+  animation:fadeUp .7s ease .35s both;
+}
+.mega-title .gold{color:var(--accent)}
+.intro-sub{
+  max-width:520px;font-size:16px;font-weight:400;
+  line-height:1.75;color:rgba(238,242,248,.7);
+  margin:0 auto 36px;
+  animation:fadeUp .7s ease .5s both;
+}
+.mission-card{
+  display:inline-block;
+  border:1px solid var(--accent);
+  background:rgba(200,168,75,.08);
+  padding:18px 30px;border-radius:3px;
+  max-width:540px;margin-bottom:44px;
+  animation:fadeUp .7s ease .65s both;
+}
+.mission-card .lbl{
+  font-family:'DM Mono',monospace;font-size:9px;
+  letter-spacing:3px;text-transform:uppercase;
+  color:var(--accent);margin-bottom:7px;
+}
+.mission-card p{font-size:15px;font-weight:600;line-height:1.5}
+
+/* ── BUTTONS ── */
+.btn{
+  display:inline-flex;align-items:center;gap:10px;
+  font-family:'Syne',sans-serif;font-size:13px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;
+  padding:15px 36px;border-radius:2px;border:none;cursor:pointer;
+  transition:transform .2s,box-shadow .2s,background .2s;
+}
+.btn-gold{
+  background:var(--accent);color:var(--navy);
+  animation:fadeUp .7s ease .8s both;
+}
+.btn-gold:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(200,168,75,.45);background:var(--accent2)}
+.btn-gold.no-anim{animation:none;opacity:1}
+.btn-ghost{
+  background:transparent;color:var(--white);
+  border:1px solid rgba(255,255,255,.2);
+}
+.btn-ghost:hover{border-color:var(--white);background:rgba(255,255,255,.05);transform:translateY(-2px)}
+
+/* ── SCENARIO LAYOUT ── */
+.scn-wrap{width:100%;max-width:860px;margin:0 auto}
+.scn-tag{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:'DM Mono',monospace;font-size:10px;
+  letter-spacing:3px;text-transform:uppercase;
+  color:var(--muted);padding:8px 16px;
+  border:1px solid var(--border);border-radius:2px;
+  background:rgba(255,255,255,.02);margin-bottom:20px;
+}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:blip 2s infinite}
+@keyframes blip{0%,100%{opacity:1}50%{opacity:.2}}
+.scn-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(40px,5.5vw,72px);
+  line-height:.92;letter-spacing:2px;margin-bottom:16px;
+}
+.scn-narrative{
+  font-size:15px;font-weight:400;line-height:1.75;
+  color:rgba(238,242,248,.68);max-width:640px;
+  margin-bottom:38px;
+  border-left:2px solid var(--accent);padding-left:18px;
+}
+
+/* ── DECISION BLOCKS ── */
+.decisions{display:flex;flex-direction:column;gap:24px;width:100%}
+.d-block{
+  border:1px solid rgba(255,255,255,.07);
+  background:var(--navy-card);
+  border-radius:4px;padding:26px 30px;
+  transition:border-color .4s,opacity .4s,filter .4s;
+  position:relative;overflow:hidden;
+}
+.d-block::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+  opacity:0;transition:opacity .4s;
+}
+.d-block.unlocked::before{opacity:1}
+.d-block.locked{opacity:.35;pointer-events:none;filter:blur(1px)}
+.d-block.won{border-color:rgba(46,204,113,.4)}
+.d-block.lost{border-color:rgba(231,76,60,.4)}
+
+.d-num{
+  font-family:'DM Mono',monospace;font-size:10px;
+  letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:9px;
+}
+.d-question{font-size:19px;font-weight:700;margin-bottom:22px;line-height:1.3}
+
+/* ── CHOICE CARDS ── */
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:580px){.choices{grid-template-columns:1fr}}
+
+.choice{
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.03);
+  border-radius:3px;padding:18px;cursor:pointer;
+  transition:border-color .2s,background .2s,transform .2s;
+  position:relative;
+}
+.choice:hover{
+  border-color:rgba(200,168,75,.5);
+  background:rgba(200,168,75,.06);
+  transform:translateY(-2px);
+}
+.choice .c-letter{
+  font-family:'Bebas Neue',sans-serif;font-size:20px;
+  color:var(--accent);margin-bottom:6px;
+}
+.choice .c-tag{
+  font-family:'DM Mono',monospace;font-size:9px;
+  letter-spacing:2px;text-transform:uppercase;
+  margin-bottom:6px;
+}
+.choice .c-tag.domestic{color:var(--win)}
+.choice .c-tag.global{color:var(--lose)}
+.choice .c-text{font-size:14px;font-weight:600;line-height:1.4}
+.choice .c-hint{font-size:12px;font-weight:400;color:rgba(238,242,248,.5);margin-top:5px;line-height:1.4}
+
+.choice.selected-win{
+  border-color:var(--win)!important;
+  background:var(--win-dim)!important;
+  cursor:default;transform:none;
+}
+.choice.selected-lose{
+  border-color:var(--lose)!important;
+  background:var(--lose-dim)!important;
+  cursor:default;transform:none;
+}
+.choice.faded{opacity:.28;cursor:default;transform:none!important}
+.choice.faded:hover{border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.03);transform:none}
+
+/* ── OUTCOME PANEL ── */
+.outcome{
+  display:none;margin-top:16px;
+  padding:18px 22px;border-radius:3px;
+  animation:slideIn .35s ease;
+}
+.outcome.show{display:block}
+@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.outcome.win-out{background:var(--win-dim);border-left:3px solid var(--win)}
+.outcome.lose-out{background:var(--lose-dim);border-left:3px solid var(--lose)}
+
+.outcome-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:'DM Mono',monospace;font-size:10px;
+  letter-spacing:2px;text-transform:uppercase;
+  margin-bottom:8px;
+}
+.outcome-badge.win{color:var(--win)}
+.outcome-badge.lose{color:var(--lose)}
+.outcome-headline{font-size:15px;font-weight:700;margin-bottom:6px}
+.outcome-body{font-size:13px;font-weight:400;line-height:1.65;color:rgba(238,242,248,.75)}
+.cost-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:'DM Mono',monospace;font-size:11px;
+  color:var(--accent);margin-top:10px;
+}
+
+/* ── PRICE COMPARE ── */
+.price-compare{
+  display:none;gap:14px;margin-bottom:20px;flex-wrap:wrap;
+}
+.price-compare.show{display:flex}
+.pc{
+  flex:1;min-width:130px;
+  border:1px solid var(--border);border-radius:3px;
+  padding:14px;text-align:center;
+}
+.pc.us{border-color:rgba(200,168,75,.4)}
+.pc.them{border-color:rgba(231,76,60,.4)}
+.pc-brand{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:5px}
+.pc-price{font-family:'Bebas Neue',sans-serif;font-size:40px;line-height:1}
+.pc.us .pc-price{color:var(--accent)}
+.pc.them .pc-price{color:var(--lose)}
+.pc-sub{font-size:11px;color:rgba(238,242,248,.4);margin-top:3px}
+
+/* ── SCENARIO SUMMARY ── */
+.scn-summary{
+  display:none;margin-top:32px;
+  border:1px solid var(--border);
+  background:rgba(11,30,53,.8);
+  border-radius:4px;padding:24px 28px;
+}
+.scn-summary.show{display:block;animation:fadeUp .4s ease}
+.sum-lbl{
+  font-family:'DM Mono',monospace;font-size:9px;
+  letter-spacing:3px;text-transform:uppercase;
+  color:var(--accent);margin-bottom:10px;
+}
+.sum-text{font-size:15px;font-weight:400;line-height:1.7;color:rgba(238,242,248,.8);margin-bottom:20px}
+
+/* ── PROGRESS PIPS ── */
+.pips{display:flex;align-items:center;gap:5px;margin-bottom:32px}
+.pip{
+  height:3px;border-radius:2px;background:rgba(255,255,255,.1);
+  transition:background .4s,width .4s;
+}
+.pip.sm{width:26px}
+.pip.done{background:var(--accent)}
+.pip.active{background:rgba(200,168,75,.4)}
+.pip-div{width:1px;height:12px;background:var(--border);margin:0 4px}
+
+/* ── FINAL SCREEN ── */
+#final{align-items:flex-start}
+.final-wrap{width:100%;max-width:900px;margin:0 auto}
+.final-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(50px,7.5vw,100px);
+  line-height:.88;letter-spacing:2px;margin-bottom:28px;
+}
+.final-title em{color:var(--accent);font-style:normal}
+
+/* score strip */
+.score-strip{
+  display:flex;gap:20px;flex-wrap:wrap;margin-bottom:36px;
+}
+.stat-box{
+  flex:1;min-width:180px;
+  border:1px solid var(--border);border-radius:4px;
+  padding:20px 24px;background:var(--navy-card);
+}
+.sb-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.sb-val{font-family:'Bebas Neue',sans-serif;font-size:56px;line-height:1}
+.sb-val.red{color:var(--lose)}
+.sb-val.gold{color:var(--accent)}
+.sb-val.green{color:var(--win)}
+.sb-sub{font-size:12px;font-weight:400;color:rgba(238,242,248,.5);margin-top:4px}
+
+/* verdict */
+.verdict{
+  padding:26px 30px;border-radius:4px;margin-bottom:32px;
+  border-left:4px solid;
+}
+.verdict.bankrupt{background:rgba(231,76,60,.1);border-color:var(--lose)}
+.verdict.survived{background:rgba(200,168,75,.08);border-color:var(--accent)}
+.verdict-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;margin-bottom:8px}
+.verdict-body{font-size:14px;font-weight:400;line-height:1.7;color:rgba(238,242,248,.75)}
+
+/* timeline */
+.tl-section{margin-bottom:36px}
+.section-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
+.tl{position:relative;display:flex;flex-direction:column;gap:0}
+.tl::before{content:'';position:absolute;left:17px;top:0;bottom:0;width:1px;background:linear-gradient(to bottom,var(--accent),rgba(200,168,75,.05))}
+.tl-row{
+  display:flex;gap:18px;align-items:flex-start;padding:12px 0;
+  opacity:0;transform:translateX(-8px);
+  transition:opacity .4s,transform .4s;
+}
+.tl-row.vis{opacity:1;transform:translateX(0)}
+.tl-dot{
+  width:34px;height:34px;min-width:34px;
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;font-size:14px;z-index:1;
+  border:2px solid;
+}
+.tl-dot.w{border-color:var(--win);color:var(--win);background:var(--navy)}
+.tl-dot.l{border-color:var(--lose);color:var(--lose);background:var(--navy)}
+.tl-info{padding-top:4px}
+.tl-q{font-size:13px;font-weight:700;margin-bottom:2px}
+.tl-res{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px}
+.tl-res.w{color:var(--win)}
+.tl-res.l{color:var(--lose)}
+
+/* reasons */
+.reasons-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:12px;margin-bottom:36px;
+}
+.reason{
+  border:1px solid var(--border);background:var(--navy-card);
+  border-radius:4px;padding:18px;
+  opacity:0;transform:translateY(8px);transition:opacity .4s,transform .4s;
+}
+.reason.vis{opacity:1;transform:translateY(0)}
+.reason .r-icon{font-size:24px;margin-bottom:10px}
+.reason .r-text{font-size:13px;font-weight:400;line-height:1.55;color:rgba(238,242,248,.75)}
+
+/* final quote */
+.final-quote-block{
+  padding:32px 36px;border-radius:4px;
+  border:1px solid var(--accent);
+  background:rgba(200,168,75,.07);margin-bottom:32px;
+}
+.fq-main{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(20px,2.8vw,34px);line-height:1.15;letter-spacing:1px;
+  margin-bottom:18px;
+}
+.fq-sub{
+  font-size:15px;font-style:italic;font-weight:400;
+  color:rgba(238,242,248,.55);
+  border-left:2px solid var(--accent);padding-left:14px;
+}
+
+@media(max-width:768px){
+  #hud{padding:10px 16px}
+  .hud-meters{gap:16px}
+  .meter-bar{width:60px}
+  .d-block{padding:18px}
+  .final-quote-block{padding:22px}
+  .score-strip{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<!-- ── HUD ── -->
+<header id="hud" class="off">
+  <div class="hud-logo">EAGLE<em>TECH</em></div>
+  <div class="hud-meters">
+    <div class="meter-group">
+      <div class="meter-lbl">Losses</div>
+      <div class="meter-row">
+        <div class="meter-bar"><div class="meter-fill fill-lose" id="loss-bar" style="width:0%"></div></div>
+        <div class="meter-val score-num" id="loss-display">0</div>
+      </div>
+    </div>
+    <div class="meter-group">
+      <div class="meter-lbl">Cost Overrun</div>
+      <div class="meter-row">
+        <div class="meter-bar"><div class="meter-fill fill-cost" id="cost-bar" style="width:0%"></div></div>
+        <div class="meter-val cost-num" id="cost-display">$0B</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════ INTRO ══════════════ -->
+<section class="screen active" id="intro">
+  <div class="flag-stripe">
+    <span class="fs-r"></span><span class="fs-w"></span><span class="fs-r"></span>
+    <span class="fs-w"></span><span class="fs-b"></span><span class="fs-w"></span>
+    <span class="fs-r"></span><span class="fs-w"></span><span class="fs-r"></span>
+  </div>
+  <div class="eyebrow">International Trade Simulation · University Edition</div>
+  <h1 class="mega-title">THE<br><span class="gold">IMPOSSIBLE</span><br>AMERICAN<br>COMPANY</h1>
+  <p class="intro-sub">
+    You are the leadership team of <strong>EagleTech</strong>. Your mission is to build a smartphone using <em>only</em> American resources, labor, and suppliers.<br><br>
+    At every decision point, <strong>choose the domestic option</strong>. If the global economy forces your hand, you lose that round — and you'll learn exactly why.
+  </p>
+  <div class="mission-card">
+    <div class="lbl">Company Mission</div>
+    <p>"Build a smartphone entirely in the United States without relying on foreign countries."</p>
+  </div>
+  <button class="btn btn-gold" onclick="startSim()">Launch Simulation →</button>
+</section>
+
+<!-- ══════════════ SCENARIO 1 ══════════════ -->
+<section class="screen" id="s1">
+  <div class="scn-wrap">
+    <div class="pips" id="pip-s1"></div>
+    <div class="scn-tag"><span class="pulse"></span>Scenario 1 of 3 &nbsp;·&nbsp; Presenter 1</div>
+    <h2 class="scn-title">The Patriotic<br>Startup</h2>
+    <p class="scn-narrative">"EagleTech is open for business. Three foundational decisions stand between you and your first phone. Stay domestic — or watch the global economy take over."</p>
+
+    <div class="decisions">
+
+      <!-- D1 -->
+      <div class="d-block unlocked" id="db1">
+        <div class="d-num">Decision 01 of 09</div>
+        <div class="d-question">Where will you source rare earth minerals?</div>
+        <div class="choices">
+          <div class="choice" id="c1A" onclick="decide(1,'A')">
+            <div class="c-letter">A</div>
+            <div class="c-tag domestic">✦ Domestic</div>
+            <div class="c-text">Mine only in the United States</div>
+            <div class="c-hint">Mountain Pass, CA produces some — can it be enough?</div>
+          </div>
+          <div class="choice" id="c1B" onclick="decide(1,'B')">
+            <div class="c-letter">B</div>
+            <div class="c-tag global">✖ Foreign</div>
+            <div class="c-text">Import minerals from abroad</div>
+            <div class="c-hint">China controls 60%+ of global rare earth output</div>
+          </div>
+        </div>
+        <div class="outcome" id="out1"></div>
+      </div>
+
+      <!-- D2 -->
+      <div class="d-block locked" id="db2">
+        <div class="d-num">Decision 02 of 09</div>
+        <div class="d-question">How will you obtain advanced microchips?</div>
+        <div class="choices">
+          <div class="choice" id="c2A" onclick="decide(2,'A')">
+            <div class="c-letter">A</div>
+            <div class="c-tag domestic">✦ Domestic</div>
+            <div class="c-text">Build American semiconductor factories</div>
+            <div class="c-hint">CHIPS Act is funding it — but it takes years</div>
+          </div>
+          <div class="choice" id="c2B" onclick="decide(2,'B')">
+            <div class="c-letter">B</div>
+            <div class="c-tag global">✖ Foreign</div>
+            <div class="c-text">Buy chips from TSMC or Samsung</div>
+            <div class="c-hint">Taiwan makes 90% of the world's advanced chips</div>
+          </div>
+        </div>
+        <div class="outcome" id="out2"></div>
+      </div>
+
+      <!-- D3 -->
+      <div class="d-block locked" id="db3">
+        <div class="d-num">Decision 03 of 09</div>
+        <div class="d-question">Where will your phones be assembled?</div>
+        <div class="choices">
+          <div class="choice" id="c3A" onclick="decide(3,'A')">
+            <div class="c-letter">A</div>
+            <div class="c-tag domestic">✦ Domestic</div>
+            <div class="c-text">American workers, American factories</div>
+            <div class="c-hint">US manufacturing wages average $28/hr vs $3–5/hr overseas</div>
+          </div>
+          <div class="choice" id="c3B" onclick="decide(3,'B')">
+            <div class="c-letter">B</div>
+            <div class="c-tag global">✖ Foreign</div>
+            <div class="c-text">Outsource assembly to Foxconn overseas</div>
+            <div class="c-hint">The approach Apple and Samsung both use</div>
+          </div>
+        </div>
+        <div class="outcome" id="out3"></div>
+      </div>
+
+    </div>
+
+    <div class="scn-summary" id="sum1">
+      <div class="sum-lbl">Scenario 1 Summary</div>
+      <div class="sum-text" id="sum1-text"></div>
+      <button class="btn btn-gold no-anim" onclick="goS(2)">Proceed to Scenario 2 →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ SCENARIO 2 ══════════════ -->
+<section class="screen" id="s2">
+  <div class="scn-wrap">
+    <div class="pips" id="pip-s2"></div>
+    <div class="scn-tag"><span class="pulse"></span>Scenario 2 of 3 &nbsp;·&nbsp; Presenter 2</div>
+    <h2 class="scn-title">Global<br>Pandemic</h2>
+    <p class="scn-narrative">"A pandemic shuts down factories worldwide. Supply chains fracture. Shipping freezes. EagleTech must navigate three brutal crises — and try to stay domestic."</p>
+
+    <div class="decisions">
+
+      <!-- D4 -->
+      <div class="d-block unlocked" id="db4">
+        <div class="d-num">Decision 04 of 09</div>
+        <div class="d-question">Several suppliers have shut down. How do you keep production running?</div>
+        <div class="choices">
+          <div class="choice" id="c4A" onclick="decide(4,'A')">
+            <div class="c-letter">A</div>
+            <div class="c-tag domestic">✦ Domestic</div>
+            <div class="c-text">Wait for domestic suppliers to reopen</div>
+            <div class="c-hint">Patriotic — but your competitors won't wait</div>
+          </div>
+          <div class="choice" id="c4B" onclick="decide(4,'B')">
+            <div class="c-letter">B</div>
+            <div class="c-tag global">✖ Foreign</div>
+            <div class="c-text">Find alternative suppliers internationally</div>
+            <div class="c-hint">Vietnam and Mexico ramped up during COVID</div>
+          </div>
+        </div>
+        <div class="outcome" id="out4"></div>
+      </div>
+
+      <!-- D5 -->
+      <div class="d-block locked" id="db5">
+        <div class="d-num">Decision 05 of 09</div>
+        <div class="d-question">A critical display component is completely unavailable domestically.</div>
+        <div class="choices">
+          <div class="choice" id="c5A" onclick="decide(5,'A')">
+            <div class="c-letter">A</div>
+            <div class="c-tag domestic">✦ Domestic</div>
+            <div class="c-text">Redesign the phone around parts we can source locally</div>
+            <div class="c-hint">Shows ingenuity — but at what cost?</div>
+          </div>
+          <div class="choice" id="c5B" onclick="decide(5,'B')">
+            <div class="c-letter">B</div>
+            <div class="c-tag global">✖ Foreign</div>
+            <div class="c-text">Emergency import from South Korean suppliers</div>
+            <div class="c-hint">Samsung and LG dominate smartphone display manufacturing</div>
+          </div>
+        </div>
+        <div class="outcome" id="out5"></div>
+      </div>
+
+      <!-- D6 -->
+      <div class="d-block locked" id="db6">
+        <div class="d-num">Decision 06 of 09</div>
+        <div class="d-question">Global shipping costs have increased 500%. How do you respond?</div>
+        <div class="choices">
+          <div class="choice" id="c6A" onclick="decide(6,'A')">
+            <div class="c-letter">A</div>
+            <div class="c-tag domestic">✦ Domestic</div>
+            <div class="c-text">Pause production — refuse to use global shipping</div>
+            <div class="c-hint">Keeps the mission pure, but…</div>
+          </div>
+          <div class="choice" id="c6B" onclick="decide(6,'B')">
+            <div class="c-letter">B</div>
+            <div class="c-tag global">✖ Foreign</div>
+            <div class="c-text">Accept higher costs and keep global logistics running</div>
+            <div class="c-hint">Over 90% of all goods travel by international shipping</div>
+          </div>
+        </div>
+        <div class="outcome" id="out6"></div>
+      </div>
+
+    </div>
+
+    <div class="scn-summary" id="sum2">
+      <div class="sum-lbl">Scenario 2 Summary</div>
+      <div class="sum-text" id="sum2-text"></div>
+      <button class="btn btn-gold no-anim" onclick="goS(3)">Proceed to Scenario 3 →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ SCENARIO 3 ══════════════ -->
+<section class="screen" id="s3">
+  <div class="scn-wrap">
+    <div class="pips" id="pip-s3"></div>
+    <div class="scn-tag"><span class="pulse"></span>Scenario 3 of 3 &nbsp;·&nbsp; Presenter 3</div>
+    <h2 class="scn-title">Geopolitical<br>Conflict</h2>
+    <p class="scn-narrative">"Trade wars. Tariffs. A foreign competitor is undercutting your price by nearly half. This is EagleTech's final stand — and its hardest."</p>
+
+    <div class="decisions">
+
+      <!-- D7 -->
+      <div class="d-block unlocked" id="db7">
+        <div class="d-num">Decision 07 of 09</div>
+        <div class="d-question">A foreign government restricts the export of critical battery materials.</div>
+        <div class="choices">
+          <div class="choice" id="c7A" onclick="decide(7,'A')">
+            <div class="c-letter">A</div>
+            <div class="c-tag domestic">✦ Domestic</div>
+            <div class="c-text">Source alternative battery tech from domestic labs</div>
+            <div class="c-hint">US research exists — but isn't ready for mass production</div>
+          </div>
+          <div class="choice" id="c7B" onclick="decide(7,'B')">
+            <div class="c-letter">B</div>
+            <div class="c-tag global">✖ Foreign</div>
+            <div class="c-text">Negotiate around the restriction through allied countries</div>
+            <div class="c-hint">Most lithium is mined in Chile, Australia, and Argentina</div>
+          </div>
+        </div>
+        <div class="outcome" id="out7"></div>
+      </div>
+
+      <!-- D8 -->
+      <div class="d-block locked" id="db8">
+        <div class="d-num">Decision 08 of 09</div>
+        <div class="d-question">A foreign competitor launches a nearly identical phone — at $700 vs your $1,200.</div>
+        <div class="price-compare" id="pcomp">
+          <div class="pc us"><div class="pc-brand">EAGLETECH</div><div class="pc-price">$1,200</div><div class="pc-sub">Fully domestic</div></div>
+          <div class="pc them"><div class="pc-brand">COMPETITOR</div><div class="pc-price">$700</div><div class="pc-sub">Global supply chain</div></div>
+        </div>
+        <div class="choices">
+          <div class="choice" id="c8A" onclick="decide(8,'A')">
+            <div class="c-letter">A</div>
+            <div class="c-tag domestic">✦ Domestic</div>
+            <div class="c-text">Hold the price — stay fully domestic, stay true to the mission</div>
+            <div class="c-hint">Principle over profit</div>
+          </div>
+          <div class="choice" id="c8B" onclick="decide(8,'B')">
+            <div class="c-letter">B</div>
+            <div class="c-tag global">✖ Foreign</div>
+            <div class="c-text">Move some production overseas to lower the price</div>
+            <div class="c-hint">A $500 gap is commercially unsurvivable</div>
+          </div>
+        </div>
+        <div class="outcome" id="out8"></div>
+      </div>
+
+      <!-- D9 -->
+      <div class="d-block locked" id="db9">
+        <div class="d-num">Decision 09 of 09 — Final Decision</div>
+        <div class="d-question">EagleTech is at a crossroads. The board must make its final call.</div>
+        <div class="choices">
+          <div class="choice" id="c9A" onclick="decide(9,'A')">
+            <div class="c-letter">A</div>
+            <div class="c-tag domestic">✦ Domestic</div>
+            <div class="c-text">Stay the course — complete independence, no matter the cost</div>
+            <div class="c-hint">The mission above all else</div>
+          </div>
+          <div class="choice" id="c9B" onclick="decide(9,'B')">
+            <div class="c-letter">B</div>
+            <div class="c-tag global">✖ Foreign</div>
+            <div class="c-text">Embrace global trade — the economy has spoken</div>
+            <div class="c-hint">Join the system every other company relies on</div>
+          </div>
+        </div>
+        <div class="outcome" id="out9"></div>
+      </div>
+
+    </div>
+
+    <div class="scn-summary" id="sum3">
+      <div class="sum-lbl">Scenario 3 Summary</div>
+      <div class="sum-text" id="sum3-text"></div>
+      <button class="btn btn-gold no-anim" onclick="goFinal()">View Final Results →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ FINAL ══════════════ -->
+<section class="screen" id="final">
+  <div class="final-wrap">
+    <div class="eyebrow" style="opacity:1;animation:none;margin-bottom:16px">Simulation Complete · EagleTech</div>
+    <h2 class="final-title">SIMULATION<br><em>COMPLETE</em></h2>
+
+    <div class="score-strip">
+      <div class="stat-box">
+        <div class="sb-lbl">Rounds Won</div>
+        <div class="sb-val green" id="f-wins">0</div>
+        <div class="sb-sub">Domestic decisions held</div>
+      </div>
+      <div class="stat-box">
+        <div class="sb-lbl">Rounds Lost</div>
+        <div class="sb-val red" id="f-losses">0</div>
+        <div class="sb-sub">Global economy intervened</div>
+      </div>
+      <div class="stat-box">
+        <div class="sb-lbl">Total Cost Overrun</div>
+        <div class="sb-val gold" id="f-cost">$0B</div>
+        <div class="sb-sub">Extra cost vs. global supply chain</div>
+      </div>
+    </div>
+
+    <div class="verdict" id="verdict">
+      <div class="verdict-title" id="verdict-title"></div>
+      <div class="verdict-body" id="verdict-body"></div>
+    </div>
+
+    <div class="tl-section">
+      <div class="section-lbl">Decision Timeline</div>
+      <div class="tl" id="tl"></div>
+    </div>
+
+    <div class="section-lbl" style="margin-bottom:14px">Why Complete Independence Failed</div>
+    <div class="reasons-grid">
+      <div class="reason"><div class="r-icon">🌍</div><div class="r-text">Resources are unevenly distributed — no single country has everything it needs</div></div>
+      <div class="reason"><div class="r-icon">🏭</div><div class="r-text">Decades of global specialization mean expertise concentrates abroad</div></div>
+      <div class="reason"><div class="r-icon">🔗</div><div class="r-text">Modern supply chains cross 5–10 borders before reaching a consumer</div></div>
+      <div class="reason"><div class="r-icon">🌐</div><div class="r-text">Shocks like pandemics and wars expose every country's interdependence</div></div>
+      <div class="reason"><div class="r-icon">📈</div><div class="r-text">Price competition punishes inefficiency — the market rewards specialization</div></div>
+    </div>
+
+    <div class="final-quote-block">
+      <div class="fq-main">"Modern international trade is not simply a choice. It is a consequence of global specialization and interdependence."</div>
+      <div class="fq-sub">"No country truly produces alone."</div>
+    </div>
+
+    <button class="btn btn-ghost" onclick="restart()" style="opacity:1">↺ &nbsp; Restart Simulation</button>
+  </div>
+</section>
+
+<script>
+// ══ DATA ══
+
+const D = {
+  // id: {qShort, domestic:'A'|'B', costs: {A,B}, outcomes: {A: {win:bool, headline, body}, B:{...}}}
+  1: {
+    q: 'Rare earth minerals — source?',
+    domestic: 'A',
+    costs: { A: 8, B: 0 },
+    outcomes: {
+      A: {
+        win: true,
+        headline: '✦ You held the line — but supply is thin.',
+        body: 'The Mountain Pass mine in California produces rare earths, but US output covers less than 15% of domestic tech demand. Production slows and costs balloon — but you kept it American.',
+        cost: '+$8B cost overrun vs. importing'
+      },
+      B: {
+        win: false,
+        headline: '✖ The global economy intervened.',
+        body: 'China controls over 60% of global rare earth production and processing. Without them, modern electronics simply don\'t get made. Even the US military depends on Chinese rare earths. This isn\'t a choice — it\'s a structural reality.',
+        cost: null
+      }
+    }
+  },
+  2: {
+    q: 'Advanced microchips — approach?',
+    domestic: 'A',
+    costs: { A: 40, B: 0 },
+    outcomes: {
+      A: {
+        win: true,
+        headline: '✦ You\'re building — but it\'ll take years.',
+        body: 'Intel and new CHIPS Act fabs are being built in Ohio and Arizona. But advanced 3nm chips still require TSMC-level expertise that doesn\'t yet exist domestically at scale. You\'re behind — but committed.',
+        cost: '+$40B fab construction cost'
+      },
+      B: {
+        win: false,
+        headline: '✖ Taiwan makes 90% of the world\'s advanced chips.',
+        body: 'TSMC alone manufactures chips for Apple, Nvidia, AMD, and Qualcomm. There is no domestic alternative at scale for cutting-edge semiconductors. The US government\'s own CHIPS Act was created specifically because this dependency is a national security risk.',
+        cost: null
+      }
+    }
+  },
+  3: {
+    q: 'Phone assembly — labor?',
+    domestic: 'A',
+    costs: { A: 30, B: 0 },
+    outcomes: {
+      A: {
+        win: true,
+        headline: '✦ Made in America — at a steep price.',
+        body: 'US manufacturing wages average $28/hr. The same work costs $3–5/hr in Vietnam or $6/hr in Mexico. A phone assembled entirely in the US costs an estimated $200–$400 more to produce. You stayed domestic — but your price tag just became a liability.',
+        cost: '+$30B labor cost premium'
+      },
+      B: {
+        win: false,
+        headline: '✖ The cost gap is commercially impossible to ignore.',
+        body: 'Apple pays Foxconn roughly $4–5 per hour for assembly labor. The US equivalent is 6–8x higher. Even companies that tried American assembly — like Motorola\'s Moto X (2013) — abandoned it within a year due to cost. The market punishes the premium.',
+        cost: null
+      }
+    }
+  },
+  4: {
+    q: 'Pandemic — supplier shutdown response?',
+    domestic: 'A',
+    costs: { A: 5, B: 0 },
+    outcomes: {
+      A: {
+        win: true,
+        headline: '✦ You waited. Your competitors didn\'t.',
+        body: 'Domestic suppliers eventually reopened — but 4 months of lost production meant competitors captured your market share. You kept the mission pure, at the cost of revenue and customer trust.',
+        cost: '+$5B lost revenue while waiting'
+      },
+      B: {
+        win: false,
+        headline: '✖ The pandemic proved global dependence isn\'t optional.',
+        body: 'During COVID-19, the US discovered it couldn\'t produce its own masks, medicines, or microchips in sufficient quantities. The solution every company found was international — Vietnam, Taiwan, and Mexico filled the gaps. There was no domestic backstop.',
+        cost: null
+      }
+    }
+  },
+  5: {
+    q: 'Component shortage — display strategy?',
+    domestic: 'A',
+    costs: { A: 15, B: 0 },
+    outcomes: {
+      A: {
+        win: true,
+        headline: '✦ Ingenious — but expensive and slow.',
+        body: 'The engineering redesign took 7 months and $15B in additional R&D. The result is a technically inferior display compared to what Samsung and LG produce at scale. You stayed domestic — but your product fell behind.',
+        cost: '+$15B redesign and delay cost'
+      },
+      B: {
+        win: false,
+        headline: '✖ The US doesn\'t make smartphone displays.',
+        body: 'Samsung and LG together supply the majority of OLED panels used in modern smartphones. The US has no domestic manufacturer of advanced smartphone displays at scale. This isn\'t a policy failure — it\'s decades of specialization.',
+        cost: null
+      }
+    }
+  },
+  6: {
+    q: 'Shipping costs +500% — decision?',
+    domestic: 'A',
+    costs: { A: 20, B: 0 },
+    outcomes: {
+      A: {
+        win: true,
+        headline: '✦ Production paused. The mission held.',
+        body: 'You refused to use global shipping infrastructure. But here\'s the problem: even domestic supply chains depend on globally traded fuel, globally made trucks, and globally sourced machine parts. The pause revealed just how embedded global systems are — even "domestic" logistics aren\'t truly domestic.',
+        cost: '+$20B in lost sales during pause'
+      },
+      B: {
+        win: false,
+        headline: '✖ Over 90% of global goods move by international shipping.',
+        body: 'The shipping industry is inherently global. Ports, containers, fuel, and logistics networks cross dozens of borders. During COVID, shipping costs rose 500% — and every company was forced to absorb them or stop selling. There is no purely domestic alternative.',
+        cost: null
+      }
+    }
+  },
+  7: {
+    q: 'Battery materials restricted — action?',
+    domestic: 'A',
+    costs: { A: 25, B: 0 },
+    outcomes: {
+      A: {
+        win: true,
+        headline: '✦ You invested in domestic alternatives.',
+        body: 'US labs are developing solid-state batteries that could reduce lithium dependency — but they\'re 5–10 years from commercial production. You funded the research and accepted slower production in the meantime. An expensive, principled stand.',
+        cost: '+$25B in R&D and production delay'
+      },
+      B: {
+        win: false,
+        headline: '✖ Lithium doesn\'t follow borders.',
+        body: 'Over 75% of the world\'s lithium — the key ingredient in smartphone batteries — is mined in Chile, Australia, and Argentina. China processes 60% of the global supply. The US imports nearly all of it. Geopolitics can cut that line at any moment — which is exactly why it happened.',
+        cost: null
+      }
+    }
+  },
+  8: {
+    q: 'Competitor launches at $700 vs your $1,200 — response?',
+    domestic: 'A',
+    costs: { A: 50, B: 0 },
+    outcomes: {
+      A: {
+        win: true,
+        headline: '✦ You held the price. Customers didn\'t.',
+        body: 'Market share dropped 62% in two quarters. Some customers appreciate the "Made in USA" premium — but most are rational actors. A $500 gap on a commodity product is commercially terminal. You stayed true to the mission. The market voted with its wallet.',
+        cost: '+$50B in lost market share'
+      },
+      B: {
+        win: false,
+        headline: '✖ $500 price gaps don\'t survive in competitive markets.',
+        body: 'The iPhone itself is assembled in China. The Samsung Galaxy is assembled in Vietnam. Every major smartphone manufacturer uses global supply chains — not because they want to, but because a $500 premium makes a product commercially unviable. Consumers have spoken worldwide.',
+        cost: null
+      }
+    }
+  },
+  9: {
+    q: 'Final decision — complete independence or global trade?',
+    domestic: 'A',
+    costs: { A: 999, B: 0 }, // special: domestic = bankruptcy
+    outcomes: {
+      A: {
+        win: true,
+        headline: '✦ Mission accomplished. Company bankrupt.',
+        body: 'EagleTech stayed completely domestic to the end. The product was real, the commitment was total — and the company ran out of money. With a $1,400 retail price in a $700 market, with 5 years of production delays, and with billions in cost overruns, the board voted to dissolve. The mission succeeded. The company did not.',
+        cost: 'EagleTech declares bankruptcy'
+      },
+      B: {
+        win: false,
+        headline: '✖ The global economy won.',
+        body: 'EagleTech joins Apple, Samsung, Google, and every other smartphone maker in using global supply chains. This isn\'t failure — it\'s the lesson: modern trade isn\'t a political choice. It\'s the consequence of how the world actually produces things.',
+        cost: null
+      }
+    }
+  }
+};
+
+// scenario → decision IDs
+const SCEN = { 1:[1,2,3], 2:[4,5,6], 3:[7,8,9] };
+const NEXT = { 1:2, 2:3, 4:5, 5:6, 7:8, 8:9 };
+
+// ══ STATE ══
+let choices  = {};   // id → 'A'|'B'
+let losses   = 0;
+let wins     = 0;
+let costB    = 0;    // billions
+
+// ══ HUD ══
+function updateHUD() {
+  document.getElementById('loss-display').textContent = losses;
+  document.getElementById('loss-bar').style.width = (losses/9*100)+'%';
+  document.getElementById('cost-display').textContent = '$'+costB+'B';
+  document.getElementById('cost-bar').style.width = Math.min(costB/200*100,100)+'%';
+}
+
+// ══ PIPS ══
+function buildPips(scen) {
+  const ids   = SCEN[scen];
+  const done  = ids.filter(id => choices[id]).length;
+  const el    = document.getElementById('pip-s'+scen);
+  el.innerHTML = '';
+  // global progress dots (all 9)
+  for (let i=1;i<=9;i++) {
+    const p = document.createElement('div');
+    p.className = 'pip sm' + (i<=Object.keys(choices).length?' done':i===Object.keys(choices).length+1?' active':'');
+    el.appendChild(p);
+    if (i===3||i===6) { const dv=document.createElement('div'); dv.className='pip-div'; el.appendChild(dv); }
+  }
+}
+
+// ══ DECIDE ══
+function decide(id, letter) {
+  if (choices[id]) return;
+  choices[id] = letter;
+
+  const data    = D[id];
+  const out     = data.outcomes[letter];
+  const isDom   = (letter === data.domestic);
+  const isCost  = isDom && data.costs[letter];
+
+  if (isDom) { wins++; if(isCost) costB += data.costs[letter]; }
+  else       { losses++; }
+
+  updateHUD();
+
+  // Style chosen card
+  const card = document.getElementById('c'+id+letter);
+  card.classList.add(isDom ? 'selected-win' : 'selected-lose');
+  const other = document.getElementById('c'+id+(letter==='A'?'B':'A'));
+  other.classList.add('faded');
+
+  // Block state
+  const block = document.getElementById('db'+id);
+  block.classList.add(isDom ? 'won' : 'lost');
+
+  // Outcome panel
+  const outEl = document.getElementById('out'+id);
+  outEl.className = 'outcome show ' + (isDom?'win-out':'lose-out');
+  outEl.innerHTML = `
+    <div class="outcome-badge ${isDom?'win':'lose'}">${isDom?'✦ Domestic Win':'✖ Round Lost'}</div>
+    <div class="outcome-headline">${out.headline}</div>
+    <div class="outcome-body">${out.body}</div>
+    ${out.cost ? `<div class="cost-tag">▲ ${out.cost}</div>` : ''}
+  `;
+
+  // Update pips
+  const scen = id<=3?1:id<=6?2:3;
+  buildPips(scen);
+
+  // Show price compare on D8 unlock moment was already triggered; this is after choice
+  // Unlock next or show summary
+  if (NEXT[id]) {
+    setTimeout(() => unlockBlock(NEXT[id]), 700);
+  } else {
+    // end of scenario
+    setTimeout(() => showScenSummary(scen), 900);
+  }
+  if (id===3) setTimeout(()=>showScenSummary(1), 900);
+  if (id===6) setTimeout(()=>showScenSummary(2), 900);
+  if (id===9) setTimeout(()=>showScenSummary(3), 900);
+}
+
+function unlockBlock(id) {
+  const b = document.getElementById('db'+id);
+  b.classList.remove('locked');
+  b.classList.add('unlocked');
+  if (id===8) document.getElementById('pcomp').classList.add('show');
+  b.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function showScenSummary(scen) {
+  const ids   = SCEN[scen];
+  const sw    = ids.filter(id=>choices[id]&&choices[id]===D[id].domestic).length;
+  const sl    = ids.filter(id=>choices[id]&&choices[id]!==D[id].domestic).length;
+  const texts = {
+    1: sw===3
+      ? `You held the domestic line in every decision — at a cost of $${ids.reduce((a,id)=>a+(choices[id]===D[id].domestic?D[id].costs[D[id].domestic]:0),0)}B in overruns. The mission is intact — but barely sustainable.`
+      : sl===3
+      ? `You lost every round in Scenario 1. The global economy didn't give you a choice. Resources, chips, and labor all pulled you abroad before the first phone was even assembled.`
+      : `You won ${sw} of 3 rounds. Even with partial domestic sourcing, the cost overruns are mounting and the gaps are widening.`,
+    2: sw===3
+      ? `A remarkable effort through the pandemic — but at a heavy price. Waiting, redesigning, and pausing cost tens of billions. The global supply chain was absent, and its absence left a hole nothing domestic could fill in time.`
+      : sl===3
+      ? `The pandemic broke the independence strategy completely. Every crisis drove EagleTech toward the global economy — not by choice, but by necessity.`
+      : `A mixed record through the pandemic. Some principles held; others gave way. The lesson: crises don't respect national borders.`,
+    3: sw===3
+      ? `You completed the simulation with the mission intact and the company destroyed. Total domestic commitment produced a product no market could sustain.`
+      : sl===3
+      ? `You lost every round in Scenario 3. Geopolitics, competition, and economics made complete independence structurally impossible.`
+      : `A final scenario of compromises. Some wins, some losses — but the dependence score tells the real story.`
+  };
+
+  const sum = document.getElementById('sum'+scen);
+  document.getElementById('sum'+scen+'-text').textContent = texts[scen];
+  sum.classList.add('show');
+  setTimeout(()=>sum.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
+}
+
+// ══ NAV ══
+function startSim() {
+  document.getElementById('hud').classList.remove('off');
+  buildPips(1);
+  showScreen('s1');
+}
+function goS(n) {
+  buildPips(n);
+  showScreen('s'+n);
+}
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ══ FINAL ══
+function goFinal() {
+  showScreen('final');
+
+  document.getElementById('f-wins').textContent   = wins;
+  document.getElementById('f-losses').textContent = losses;
+  document.getElementById('f-cost').textContent   = costB >= 999 ? '∞' : '$'+costB+'B';
+
+  // Verdict
+  const vEl   = document.getElementById('verdict');
+  const vT    = document.getElementById('verdict-title');
+  const vB    = document.getElementById('verdict-body');
+
+  if (wins === 9) {
+    vEl.className = 'verdict bankrupt';
+    vT.textContent = 'TOTAL INDEPENDENCE — TOTAL BANKRUPTCY';
+    vB.textContent = 'EagleTech never imported a single component. It also never survived. With over $193B in cost overruns, a phone priced at $1,400 in a $700 market, and years of production delays, the company dissolved before its second product launch. The mission was achieved. The company was not.';
+  } else if (losses === 9) {
+    vEl.className = 'verdict survived';
+    vT.textContent = 'ZERO INDEPENDENCE — MAXIMUM SURVIVAL';
+    vB.textContent = 'EagleTech chose practicality at every turn. The company is profitable, competitive, and growing — and entirely embedded in global supply chains. Exactly like Apple. Exactly like Samsung. The simulation proved: you can\'t fight the structure of the global economy.';
+  } else {
+    const bankrupted = wins >= 7;
+    vEl.className = 'verdict ' + (bankrupted ? 'bankrupt' : 'survived');
+    if (bankrupted) {
+      vT.textContent = 'NEAR-TOTAL INDEPENDENCE — NEAR BANKRUPTCY';
+      vB.textContent = `EagleTech won ${wins} of 9 rounds but accumulated $${costB}B in overruns. The company is surviving — barely — with a product priced out of the competitive range. The market share is in freefall. Independence came at a cost the market will not absorb for long.`;
+    } else {
+      vT.textContent = 'PARTIAL INDEPENDENCE — SURVIVING THROUGH TRADE';
+      vB.textContent = `EagleTech won ${wins} rounds and lost ${losses}. The losses weren't policy failures — they were structural realities. Where domestic options existed, they cost $${costB}B more. Where they didn't exist, the global economy wasn't a choice. It was the only path.`;
+    }
+  }
+
+  // Timeline
+  buildTimeline();
+  setTimeout(animateReasons, 600);
+}
+
+function buildTimeline() {
+  const tl = document.getElementById('tl');
+  tl.innerHTML = '';
+  Object.keys(choices).sort((a,b)=>+a-+b).forEach((id,i) => {
+    const letter = choices[id];
+    const isWin  = letter === D[id].domestic;
+    const row    = document.createElement('div');
+    row.className = 'tl-row';
+    row.innerHTML = `
+      <div class="tl-dot ${isWin?'w':'l'}">${id}</div>
+      <div class="tl-info">
+        <div class="tl-q">${D[id].q}</div>
+        <div class="tl-res ${isWin?'w':'l'}">${isWin ? '✦ Domestic — held' : '✖ Global — lost'}</div>
+      </div>`;
+    tl.appendChild(row);
+    setTimeout(()=>row.classList.add('vis'), i*110);
+  });
+}
+
+function animateReasons() {
+  document.querySelectorAll('.reason').forEach((r,i)=>{
+    setTimeout(()=>r.classList.add('vis'), i*130);
+  });
+}
+
+// ══ RESTART ══
+function restart() {
+  choices = {}; losses = 0; wins = 0; costB = 0;
+  updateHUD();
+
+  for (let id=1;id<=9;id++) {
+    const b = document.getElementById('db'+id);
+    if (!b) continue;
+    ['A','B'].forEach(l=>{
+      const c = document.getElementById('c'+id+l);
+      if (c) c.className = 'choice';
+    });
+    b.className = 'd-block ' + ([1,4,7].includes(id)?'unlocked':'locked');
+    const o = document.getElementById('out'+id);
+    if (o) { o.className = 'outcome'; o.innerHTML = ''; }
+  }
+
+  const pc = document.getElementById('pcomp');
+  if (pc) pc.classList.remove('show');
+
+  [1,2,3].forEach(s=>{
+    const sum = document.getElementById('sum'+s);
+    if (sum) sum.classList.remove('show');
+    buildPips(s);
+  });
+
+  document.querySelectorAll('.reason').forEach(r=>r.classList.remove('vis'));
+  document.querySelectorAll('.tl-row').forEach(r=>r.classList.remove('vis'));
+
+  document.getElementById('hud').classList.add('off');
+  showScreen('intro');
+}
+
+// Init pips silently
+buildPips(1); buildPips(2); buildPips(3);
+</script>
+</body>
+</html>
